@@ -1,0 +1,68 @@
+#
+# DevOps 101 Playbook
+#
+---
+- hosts: all
+  user: ubuntu
+  become: yes
+  become_method: sudo
+
+  tasks:
+    - name: Install aptitude using apt
+      apt: name=aptitude state=latest update_cache=yes force_apt_get=yes
+
+    - name: Install required system packages
+      apt: name={{ item }} state=latest update_cache=yes
+      loop: [ 'apt-transport-https', 'ca-certificates', 'curl', 'software-properties-common', 'python3-pip', 'virtualenv', 'python3-setuptools']
+
+    # Docker
+    - name: Add Docker GPG apt Key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add Docker Repository
+      apt_repository:
+        repo: deb https://download.docker.com/linux/ubuntu bionic stable
+        state: present
+
+    - name: Update apt and install docker-ce
+      apt: update_cache=yes name=docker-ce state=latest
+
+    - name: Install Docker Module for Python
+      pip:
+        name: docker
+
+    # Jenkins
+    - name: Running Jenkins Container
+      shell:
+        cmd: docker run --name='{{ item }}'  -p 8080:8080 -p 50000:50000 -d -v /var/jenkins_home jenkins/jenkins:lts
+      loop:
+        - jenkinscontainer
+
+    # Kubernetes Single Node
+    - name: Installing "microk8s"
+      snap:
+        name: microk8s
+        classic: yes
+
+    - name: Enabling addons
+      shell:
+        cmd: microk8s.enable dns dashboard storage
+
+    # Create App folder and Copy files
+    - name: Create demo Directory
+      file:
+        path: /demo
+        state: directory
+        mode: '0755'
+
+    - name: Copy files to remote
+      copy:
+        src: files/Dockerfile
+        dest: /demo/Dockerfile
+
+    - name: Copy files to remote
+      copy:
+        src: files/deployment-nginx.yaml
+        dest: /demo/deployment-nginx.yaml
