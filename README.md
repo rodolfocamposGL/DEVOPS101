@@ -133,6 +133,7 @@ $ sudo docker kill <CONTAINER ID>
 
 ```
 $ cd /demo
+$ sudo microk8s.kubectl get nodes
 $ sudo microk8s.kubectl apply -f nginx-deployment.yaml
 $ sudo microk8s.kubectl rollout status deployment nginx-deployment
 $ sudo microk8s.kubectl get deployments
